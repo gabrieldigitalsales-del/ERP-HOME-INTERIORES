@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /
+
+# Sistema interno da Home Interiores.
+# Indexação pública desativada por padrão.
