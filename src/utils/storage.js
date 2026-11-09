@@ -231,7 +231,18 @@ export function storageHealth(){
 export const STORAGE_KEYS={
   products:'home-products-v12',clients:'home-clients-v12',suppliers:'home-suppliers-v12',finance:'home-finance-v12',sales:'home-sales-v12',purchases:'home-purchases-v12',movements:'home-stock-log-v16',invoices:'home-nf-docs-v16',cashLog:'home-cash-log-v23',cashSession:'home-cash-session-v23',held:'home-cash-held-v23',orders:'home-orders-v217'
 };
-export function commitLocalTransaction(label,changes={}){
+export async function commitLocalTransaction(label,changes={}){
+  if(cloudConfigured()){
+    try{
+      await flushCloudWrites();
+      const transformed=Object.fromEntries(Object.entries(changes).map(([key,value])=>[
+        key,
+        JSON.stringify(key==='home-products-v12'&&Array.isArray(value)?value.map(compactProduct):value)
+      ]));
+      await commitCloudDocuments(transformed);
+      return{ok:true,txId:'cloud-'+Date.now()};
+    }catch(error){return{ok:false,error}}
+  }
   const txId=`tx_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,previous={};
   try{
     for(const key of Object.keys(changes))previous[key]=localStorage.getItem(key);
