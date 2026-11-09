@@ -1079,3 +1079,44 @@ button:not(:disabled):focus-visible,a:focus-visible,input:focus-visible,select:f
     flex-basis:38px;
   }
 }
+
+
+/* ===== ESTOQUE GERAL / SHOWROOM ===== */
+.showroom-toggle-field{
+  align-self:stretch;
+}
+.showroom-toggle-row{
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 13px;
+  border:1px solid var(--line,#dedede);
+  background:#fafafa;
+  border-radius:8px;
+}
+.showroom-toggle-row input[type="checkbox"]{
+  width:19px;
+  height:19px;
+  flex:0 0 19px;
+  accent-color:#111;
+  cursor:pointer;
+}
+.showroom-toggle-row>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.showroom-toggle-row b{
+  font-size:13px;
+  font-weight:700;
+}
+.showroom-toggle-row small{
+  font-size:11px;
+  line-height:1.35;
+  color:#6d6d6d;
+}
+@media(max-width:720px){
+  .showroom-toggle-row{align-items:flex-start}
+}
