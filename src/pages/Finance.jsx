@@ -48,10 +48,9 @@ function inferCategory(desc=''){const t=desc.toLowerCase();if(/aluguel|condom/.t
 function pct(part,total){return total?Math.round((part/total)*100):0}
 function monthLabel(key){if(!/^\d{4}-\d{2}$/.test(key))return key;const[y,m]=key.split('-');return`${m}/${y}`}
 
-export default function Finance({finance=[],setFinance,sales=[],products=[],invoices=[]}){
+export default function Finance({finance=[],setFinance,sales=[],products=[]}){
  const entries=useMemo(()=>list(finance).map(normalizeEntry),[finance]);
  const salesRows=useMemo(()=>list(sales),[sales]);
- const invoiceRows=useMemo(()=>list(invoices),[invoices]);
  const[tab,setTab]=useState('overview');
  const[period,setPeriod]=useState('all');
  const[open,setOpen]=useState(false);
