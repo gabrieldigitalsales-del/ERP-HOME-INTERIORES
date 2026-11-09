@@ -6,7 +6,7 @@ const ERP_PREFIX='homeerp-';
 const VERSION_KEY='home-app-schema-version';
 export const APP_SCHEMA_VERSION='2.19.0';
 const isHomeKey=k=>Boolean(k&&(k.startsWith(LEGACY_PREFIX)||k.startsWith(ERP_PREFIX)));
-const businessStorage=()=>cloudConfigured()?erpCloudStorage:localStorage;
+const businessStorage=()=>cloudConfigured()&&cloudReady()?erpCloudStorage:localStorage;
 export const erpStorage={
  getItem:key=>businessStorage().getItem(key),
  setItem:(key,value)=>businessStorage().setItem(key,String(value)),
