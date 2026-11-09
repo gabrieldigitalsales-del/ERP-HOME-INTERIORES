@@ -1027,3 +1027,55 @@ button:not(:disabled):focus-visible,a:focus-visible,input:focus-visible,select:f
 @media(max-width:1000px){.salespeople-row{grid-template-columns:1fr 1fr 1fr}.salespeople-row .icon-btn{align-self:center}.inventory-hub{padding:12px}}
 @media(max-width:620px){.salespeople-row{grid-template-columns:1fr}.seller-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.inventory-hub-tabs{width:100%;overflow:auto}.inventory-hub-tabs button{white-space:nowrap;flex:1}}
 
+
+
+/* ===== MODAL BRAND FIX ===== */
+.lux-modal-heading{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.lux-modal-heading>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.lux-modal-brand{
+  display:block;
+  width:46px!important;
+  height:32px!important;
+  min-width:46px!important;
+  max-width:46px!important;
+  max-height:32px!important;
+  object-fit:contain!important;
+  object-position:left center;
+  flex:0 0 46px;
+}
+.lux-modal-heading h3{
+  line-height:1.15;
+}
+.lux-modal-heading p{
+  margin:3px 0 0;
+  line-height:1.35;
+}
+.modal.modal-centered.modal-cash-open .lux-modal-brand{
+  width:42px!important;
+  height:29px!important;
+  min-width:42px!important;
+  max-width:42px!important;
+  max-height:29px!important;
+  flex-basis:42px;
+}
+@media(max-width:620px){
+  .lux-modal-heading{gap:9px}
+  .lux-modal-brand{
+    width:38px!important;
+    height:27px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    max-height:27px!important;
+    flex-basis:38px;
+  }
+}
