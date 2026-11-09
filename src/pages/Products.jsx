@@ -170,7 +170,7 @@ export default function Products({ products, setProducts, setPage, sales = [], e
 
   return (
     <section className="page">
-      {embedded ? <div className="lux-products-header"><div><b>Catálogo de produtos</b><small>Preços, informações, fotos e cadastros.</small></div>{canWriteProduct&&<button className="primary" onClick={startNew}><Plus size={16}/>Novo produto</button>}</div> :
+      {embedded ? <div className="lux-products-header"><div><b>Catálogo de fornecedores</b><small>Tabelas e referências dos fornecedores. Para vender no PDV, envie o item para o Estoque Showroom.</small></div>{canWriteProduct&&<button className="primary" onClick={startNew}><Plus size={16}/>Novo produto</button>}</div> :
        <PageHeader title="Produtos" subtitle="Catálogo, estoque, custos, preços e margem em um só lugar." action={canWriteProduct?<button className="primary" onClick={startNew}><Plus size={17}/>Novo produto</button>:null}/>}
 
       <div className="toolbar">
