@@ -14,6 +14,6 @@ export default function InventoryHub({products,setProducts,movements,setMovement
    <button type="button" role="tab" aria-selected={tab==='showroom'} className={tab==='showroom'?'active':''} onClick={()=>setTab('showroom')}><Store size={16}/>Estoque Showroom</button>
    <button type="button" role="tab" aria-selected={tab==='products'} className={tab==='products'?'active':''} onClick={()=>setTab('products')}><Package size={16}/>Catálogo de fornecedores</button>
   </div>
-  {tab==='stock'?<Stock embedded products={products} setProducts={setProducts} movements={movements} setMovements={setMovements} sales={sales}/>:<Products embedded products={products} setProducts={setProducts} setPage={setPage} sales={sales}/>}
+  {tab==='stock'?<Stock embedded products={products} setProducts={setProducts} movements={movements} setMovements={setMovements} sales={sales}/>:tab==='showroom'?<Showroom products={products} setProducts={setProducts}/>:<Products embedded products={products} setProducts={setProducts} setPage={setPage} sales={sales}/>}
  </section>;
 }
