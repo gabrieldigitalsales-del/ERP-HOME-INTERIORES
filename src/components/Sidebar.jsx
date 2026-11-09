@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  LayoutDashboard,Package,Boxes,ArrowLeftRight,ShoppingCart,Store,Users,Truck,ShoppingBasket,
+  LayoutDashboard,Package,Boxes,ArrowLeftRight,ShoppingCart,Store,Users,Truck,
   WalletCards,ChartSpline,Settings,ChevronRight,ShieldCheck,ClipboardCheck
 } from 'lucide-react';
 import logo from '../assets/home-logo-bw.png';import{canViewPage}from'../utils/permissions';
@@ -13,7 +13,6 @@ export const navItems=[
   ['salespeople','Vendedoras',Users,'Cadastros'],
   ['stock','Produtos e Estoque',Boxes,'Estoque'],
   ['movements','Movimentações',ArrowLeftRight,'Estoque'],
-  ['purchases','Compras',ShoppingBasket,'Estoque'],
   ['clients','Clientes',Users,'Cadastros'],
   ['suppliers','Fornecedores',Truck,'Cadastros'],
   ['finance','Financeiro',WalletCards,'Gestão'],
