@@ -1,4 +1,4 @@
-const CACHE='home-erp-v2.19.0';
+const CACHE='home-erp-v2.19.1';
 const OFFLINE_URL='/index.html';
 const CORE=['/','/index.html','/site.webmanifest','/home-erp-192.png','/home-erp-512.png','/apple-touch-icon.png','/favicon.ico'];
 
