@@ -4,6 +4,13 @@ const ERP_PREFIX='homeerp-';
 const VERSION_KEY='home-app-schema-version';
 export const APP_SCHEMA_VERSION='2.18.3';
 const isHomeKey=k=>Boolean(k&&(k.startsWith(LEGACY_PREFIX)||k.startsWith(ERP_PREFIX)));
+export const erpStorage={
+ getItem:key=>localStorage.getItem(key),
+ setItem:(key,value)=>localStorage.setItem(key,String(value)),
+ removeItem:key=>localStorage.removeItem(key),
+ key:index=>localStorage.key(index),
+ get length(){return localStorage.length}
+};
 
 export function safeRead(key,fallback){
   try{
