@@ -1,20 +1,23 @@
 import {compactProduct,hydrateProduct,masterSuppliers,upsertMasterProducts} from '../data/masterData';
+import {cloudConfigured} from './cloudAuth';
+import {erpCloudStorage,cloudReady,commitCloudDocuments,queueCloudWrite,flushCloudWrites} from '../services/cloudStore';
 const LEGACY_PREFIX='home-';
 const ERP_PREFIX='homeerp-';
 const VERSION_KEY='home-app-schema-version';
 export const APP_SCHEMA_VERSION='2.19.0';
 const isHomeKey=k=>Boolean(k&&(k.startsWith(LEGACY_PREFIX)||k.startsWith(ERP_PREFIX)));
+const businessStorage=()=>cloudConfigured()?erpCloudStorage:localStorage;
 export const erpStorage={
- getItem:key=>localStorage.getItem(key),
- setItem:(key,value)=>localStorage.setItem(key,String(value)),
- removeItem:key=>localStorage.removeItem(key),
- key:index=>localStorage.key(index),
- get length(){return localStorage.length}
+ getItem:key=>businessStorage().getItem(key),
+ setItem:(key,value)=>businessStorage().setItem(key,String(value)),
+ removeItem:key=>businessStorage().removeItem(key),
+ key:index=>businessStorage().key(index),
+ get length(){return businessStorage().length}
 };
 
 export function safeRead(key,fallback){
   try{
-    const raw=localStorage.getItem(key);
+    const raw=businessStorage().getItem(key);
     if(raw===null)return fallback;
     return JSON.parse(raw);
   }catch(err){
@@ -30,18 +33,28 @@ export function safeReadArray(key,fallback=[]){
   return Array.isArray(fallback)?fallback.filter(Boolean):[];
 }
 export function safeWrite(key,value){
-  try{const payload=key==='home-products-v12'&&Array.isArray(value)?value.map(compactProduct):value;localStorage.setItem(key,JSON.stringify(payload));return true}catch(err){
-    console.error('Falha ao salvar armazenamento local:',key,err);
+  if(cloudConfigured()&&key==='home-notifications-v12')return true;
+  try{
+    if(cloudConfigured()&&!cloudReady())throw Error('Banco remoto ainda não carregado.');
+    const payload=key==='home-products-v12'&&Array.isArray(value)?value.map(compactProduct):value;
+    const raw=JSON.stringify(payload);
+    if(cloudConfigured()){
+      if(erpCloudStorage.getItem(key)!==raw)void queueCloudWrite({[key]:raw});
+    }else localStorage.setItem(key,raw);
+    return true;
+  }catch(err){
+    console.error('Falha ao salvar armazenamento:',key,err);
     try{window.dispatchEvent(new CustomEvent('home-storage-error',{detail:{key,message:String(err?.message||err)}}))}catch{}
     return false;
   }
 }
 export function homeStorageEntries(){
   const storage={};
-  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(isHomeKey(k)&&!k.includes('__snapshot__'))storage[k]=localStorage.getItem(k)}}catch{}
+  try{const source=businessStorage();for(let i=0;i<source.length;i++){const k=source.key(i);if(isHomeKey(k)&&!k.includes('__snapshot__'))storage[k]=source.getItem(k)}}catch{}
   return storage;
 }
 export function createLocalSnapshot(label='auto'){
+  if(cloudConfigured())return null;
   try{
     const key=`home__snapshot__${Date.now()}`;
     sessionStorage.setItem(key,JSON.stringify({label,at:new Date().toISOString(),storage:homeStorageEntries()}));
@@ -203,6 +216,7 @@ function migrateTo2170(){
 }
 
 export function bootstrapStorage(){
+  if(cloudConfigured())return;
   try{
     for(const key of Object.keys(sessionStorage).filter(k=>k.startsWith('home__tx__'))){try{const tx=JSON.parse(sessionStorage.getItem(key)||'null');if(tx?.state==='preparing'&&tx.previous){for(const [k,raw] of Object.entries(tx.previous))raw===null?localStorage.removeItem(k):localStorage.setItem(k,raw)}sessionStorage.removeItem(key)}catch{}}
     const current=localStorage.getItem(VERSION_KEY);
@@ -211,7 +225,7 @@ export function bootstrapStorage(){
 }
 export function storageHealth(){
   let keys=0,bytes=0,corrupt=0;
-  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!isHomeKey(k))continue;keys++;const v=localStorage.getItem(k)||'';bytes+=v.length;if(k.includes('__corrupt__')||k.includes('__invalid_shape__'))corrupt++}}catch{}
+  try{const source=businessStorage();for(let i=0;i<source.length;i++){const k=source.key(i);if(!isHomeKey(k))continue;keys++;const v=source.getItem(k)||'';bytes+=v.length;if(k.includes('__corrupt__')||k.includes('__invalid_shape__'))corrupt++}}catch{}
   return{keys,bytes,corrupt,version:localStorage.getItem(VERSION_KEY)||'legacy'};
 }
 export const STORAGE_KEYS={
