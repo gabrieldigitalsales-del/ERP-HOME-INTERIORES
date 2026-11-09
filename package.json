@@ -1,12 +1,14 @@
 {
   "name": "home-interiores-erp",
   "private": true,
-  "version": "2.18.4",
+  "version": "2.19.0",
   "type": "module",
-  "engines": { "node": ">=20.19.0" },
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "node scripts/release-check.mjs && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "audit": "node scripts/static-audit.mjs",
     "test:release": "node scripts/release-check.mjs"
