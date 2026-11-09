@@ -91,17 +91,22 @@ export default function Cashier({sales,setSales,products,setProducts,clients,set
   const[reopenReason,setReopenReason]=useState('');
   const searchRef=useRef(null);
 
-  const categories=useMemo(()=>['Todos',...Array.from(new Set(products.filter(p=>p.active!==false).map(p=>p.category).filter(Boolean))).sort()], [products]);
+  const pdvProducts=useMemo(()=>products.filter(p=>{
+    if(p.active===false)return false;
+    const showroom=p.inventoryClass==='showroom'||p.stockType==='Mostruário';
+    const manualStoreItem=!p.sourceTable&&String(p.id||'').startsWith('prd-');
+    return showroom||manualStoreItem;
+  }),[products]);
+  const categories=useMemo(()=>['Todos',...Array.from(new Set(pdvProducts.map(p=>p.category).filter(Boolean))).sort()], [pdvProducts]);
   const filtered=useMemo(()=>{
     const terms=normalizePdvSearch(q).split(' ').filter(Boolean);
-    return products.filter(p=>{
-      if(p.active===false)return false;
+    return pdvProducts.filter(p=>{
       if(category!=='Todos'&&p.category!==category)return false;
       if(!terms.length)return true;
       const searchable=normalizePdvSearch(`${p.name||''} ${p.sku||''} ${p.reference||''} ${p.category||''} ${p.brand||''} ${p.supplier||''} ${p.variant||''} ${p.color||''} ${p.sizeLabel||''}`);
       return terms.every(term=>searchable.includes(term));
     }).slice(0,60);
-  },[products,q,category]);
+  },[pdvProducts,q,category]);
 
   const units=cart.reduce((s,i)=>s+i.qty,0);
   const gross=cart.reduce((s,i)=>s+(Number(i.price)||0)*i.qty,0);
