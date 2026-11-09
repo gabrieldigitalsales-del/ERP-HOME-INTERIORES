@@ -2,7 +2,7 @@ import{safeReadArray}from'./storage';
 import{isoToday}from'./erpEngine';
 const arr=(k)=>safeReadArray(k,[]);
 export function runIntegrityCheck(){
- const products=arr('home-products-v12'),sales=arr('home-sales-v12'),finance=arr('home-finance-v12'),invoices=arr('home-nf-docs-v16'),purchases=arr('home-purchases-v12'),movements=arr('home-stock-log-v16'),bills=arr('homeerp-bills-v211');
+ const products=arr('home-products-v12'),sales=arr('home-sales-v12'),finance=arr('home-finance-v12'),purchases=arr('home-purchases-v12'),movements=arr('home-stock-log-v16'),bills=arr('homeerp-bills-v211');
  const warranties=arr('home-warranties-v29'),deliveries=arr('home-deliveries-v29'),orders=arr('home-orders-v217');
  const issues=[];
  const all=[['Produtos',products],['Vendas',sales],['Financeiro',finance],['Compras',purchases],['Estoque',movements],['Boletos',bills],['Garantias',warranties],['Entregas',deliveries],['Pedidos',orders]];
@@ -19,5 +19,5 @@ export function runIntegrityCheck(){
  for(const d of deliveries)if(d.saleId&&!saleIds.has(String(d.saleId)))issues.push({level:'warn',module:'Entregas',text:`Entrega ${d.id} referencia venda inexistente.`});
  for(const o of orders)if(o.saleId&&!saleIds.has(String(o.saleId)))issues.push({level:'warn',module:'Pedidos',text:`Pedido ${o.id} referencia venda inexistente.`});
  for(const s of sales.filter(x=>x?.status==='Concluída'))if(!orders.some(o=>String(o.saleId)===String(s.id)))issues.push({level:'warn',module:'Pedidos',text:`Venda #${s.id} concluída ainda não possui pedido operacional.`});
- return{at:new Date().toISOString(),counts:{products:products.length,sales:sales.length,finance:finance.length,invoices:invoices.length,purchases:purchases.length,movements:movements.length,bills:bills.length,warranties:warranties.length,deliveries:deliveries.length,orders:orders.length},issues,ok:issues.every(x=>x.level!=='danger')};
+ return{at:new Date().toISOString(),counts:{products:products.length,sales:sales.length,finance:finance.length,purchases:purchases.length,movements:movements.length,bills:bills.length,warranties:warranties.length,deliveries:deliveries.length,orders:orders.length},issues,ok:issues.every(x=>x.level!=='danger')};
 }
