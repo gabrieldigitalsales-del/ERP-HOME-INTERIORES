@@ -1,10 +1,9 @@
-import{api,ensureFreshCloudSession,getCloudSession}from'../utils/cloudAuth';
+import{api,cloudConfigured,HOME_TENANT_ID}from'../utils/cloudAuth';
 
-// The cloud is authoritative. This map is only an in-memory working copy.
 const records=new Map(),versions=new Map(),listeners=new Set();
 let loaded=false,queue=Promise.resolve(),lastError=null,syncing=0;
 const show=(status,message='')=>{
- window.dispatchEvent(new CustomEvent('erphomeinteriores-cloud-status',{detail:{status,message}}));
+ try{window.dispatchEvent(new CustomEvent('home-cloud-status',{detail:{status,message}}))}catch{}
  for(const fn of listeners)fn({status,message});
 };
 export const cloudReady=()=>loaded;
@@ -17,37 +16,49 @@ export const erpCloudStorage={
  key:index=>[...records.keys()][index]||null,
  get length(){return records.size}
 };
+
 export async function loadCloudDocuments(){
- const session=await ensureFreshCloudSession();if(!session.member?.tenant_owner_id)throw Error('Ative o perfil da Home Interiores.');
- const page=await api('/rest/v1/erphomeinteriores_documents?select=document_key,document_value,revision&tenant_owner_id=eq.'+encodeURIComponent(session.member.tenant_owner_id)+'&limit=1000',{token:session.access_token});
+ if(!cloudConfigured())throw Error('Supabase da Home Interiores não configurado.');
+ const page=await api('/rest/v1/erphomeinteriores_documents?select=document_key,document_value,revision&tenant_owner_id=eq.'+encodeURIComponent(HOME_TENANT_ID)+'&limit=1000');
  records.clear();versions.clear();
- for(const doc of page||[]){records.set(doc.document_key,doc.document_value===null?null:String(doc.document_value));versions.set(doc.document_key,Number(doc.revision)||0)}
- lastError=null;loaded=true;show('ready');window.dispatchEvent(new CustomEvent('erphomeinteriores-cloud-reloaded'));return records.size;
+ for(const doc of page||[]){
+  if(doc.document_value!==null)records.set(doc.document_key,String(doc.document_value));
+  versions.set(doc.document_key,Number(doc.revision)||0);
+ }
+ lastError=null;loaded=true;show('ready');
+ try{window.dispatchEvent(new CustomEvent('home-cloud-reloaded'))}catch{}
+ return records.size;
 }
+
 export async function commitCloudDocuments(changes={}){
  if(!loaded)throw Error('O banco ainda não foi carregado.');
- const s=await ensureFreshCloudSession();
  const expected=Object.fromEntries(Object.keys(changes).map(k=>[k,versions.get(k)||0]));
  syncing++;show('saving');
  try{
-  const updated=await api('/rest/v1/rpc/erphomeinteriores_save_documents',{method:'POST',body:{p_changes:changes,p_expected:expected},token:s.access_token});
-  for(const [k,v] of Object.entries(changes)){if(v===null)records.delete(k);else records.set(k,String(v));versions.set(k,updated[k]||((versions.get(k)||0)+1))}
+  const updated=await api('/rest/v1/rpc/erphomeinteriores_save_documents',{method:'POST',body:{p_changes:changes,p_expected:expected}});
+  for(const [k,v] of Object.entries(changes)){
+   if(v===null)records.delete(k);else records.set(k,String(v));
+   versions.set(k,updated?.[k]||((versions.get(k)||0)+1));
+  }
   lastError=null;
   return updated;
  }catch(error){
   lastError=error;show('error',error.message);throw error;
- }finally{syncing--;if(syncing===0&&!lastError)show('saved')}
+ }finally{
+  syncing--;
+  if(syncing===0&&!lastError)show('saved');
+ }
 }
+
 export function queueCloudWrite(changes={}){
  queue=queue.catch(()=>{}).then(()=>commitCloudDocuments(changes));
- // A remote rejection is visible, never presented as confirmed.
- queue.catch(err=>{console.error('Falha ao persistir no Supabase:',err)});
+ queue.catch(err=>console.error('Falha ao persistir no Supabase:',err));
  return queue;
 }
 export async function flushCloudWrites(){await queue;if(lastError)throw lastError}
 export function clearCloudDocuments(){records.clear();versions.clear();loaded=false;lastError=null;queue=Promise.resolve();show('disconnected')}
+
 export async function importLegacyDocuments(keys=[]){
- if(getCloudSession()?.member?.role!=='Administrador')throw Error('Apenas o administrador pode importar cadastros.');
  const selections={};
  for(const key of keys){
   const raw=window.localStorage.getItem(key);
@@ -62,8 +73,7 @@ export function availableLegacyKeys(){
  const keys=[];
  for(let i=0;i<window.localStorage.length;i++){
   const k=window.localStorage.key(i);
-  if(k&&(k.startsWith('home-')||k.startsWith('homeerp-'))&&!k.includes('__snapshot__')&&
-     !k.startsWith('home-auth')&&!k.includes('app-schema-version'))keys.push(k);
+  if(k&&(k.startsWith('home-')||k.startsWith('homeerp-'))&&!k.includes('__snapshot__')&&!k.startsWith('home-auth')&&!k.includes('app-schema-version'))keys.push(k);
  }
  return keys;
 }
