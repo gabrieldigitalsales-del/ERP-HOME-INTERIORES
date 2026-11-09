@@ -77,22 +77,19 @@ function migrateTo2120(){
 function hasTestMarker(...parts){return /\b(teste|test|placeholder|exemplo)\b/i.test(parts.map(x=>String(x??'')).join(' '))}
 function cleanDemoAndTestData(){
   const rawSales=safeReadArray('home-sales-v12',[]);
-  const rawPurchases=safeReadArray('home-purchases-v12',[]);
   const demoSaleIds=new Set(rawSales.filter(x=>x&&(hasTestMarker(x.client,x.status,x.notes,x.origin)||((x.id===1047&&x.client==='Carlos Andrade')||(x.id===1048&&x.client==='Mariana Lopes')))).map(x=>String(x.id)));
-  const demoPurchaseIds=new Set(rawPurchases.filter(x=>x&&(hasTestMarker(x.supplier,x.status,x.notes,x.origin)||((x.id===200&&x.supplier==='Design Brasil')||(x.id===201&&x.supplier==='Bella Casa')))).map(x=>String(x.id)));
   const clients=safeReadArray('home-clients-v12',[]).filter(x=>x&&!hasTestMarker(x.name,x.doc,x.email,x.notes)&&!((x.id===1&&x.name==='Mariana Lopes')||(x.id===2&&x.name==='Carlos Andrade')));
   const suppliers=safeReadArray('home-suppliers-v12',[]).filter(x=>x&&!hasTestMarker(x.name,x.doc,x.email,x.notes)&&!(['Bella Casa','Estofados Minas','Design Brasil'].includes(String(x.name||''))&&/^\d{2}\./.test(String(x.doc||x.cnpj||''))));
   const sales=rawSales.filter(x=>x&&!demoSaleIds.has(String(x.id)));
-  const purchases=rawPurchases.filter(x=>x&&!demoPurchaseIds.has(String(x.id)));
-  const finance=safeReadArray('home-finance-v12',[]).filter(x=>{if(!x||hasTestMarker(x.desc,x.category,x.origin,x.notes))return false;const o=String(x.origin||'');if(demoSaleIds.has(o.replace(/^cash-sale:|^sale:/,'')))return false;if(demoPurchaseIds.has(o.replace(/^purchase:/,'')))return false;if([1,2,3,4].includes(x.id)&&['sale:1048','purchase:201','manual','sale:1047'].includes(o))return false;return true});
+  const finance=safeReadArray('home-finance-v12',[]).filter(x=>{if(!x||hasTestMarker(x.desc,x.category,x.origin,x.notes))return false;const o=String(x.origin||'');if(demoSaleIds.has(o.replace(/^cash-sale:|^sale:/,'')))return false;if([1,2,3,4].includes(x.id)&&['sale:1048','purchase:201','manual','sale:1047'].includes(o))return false;return true});
   const invoices=safeReadArray('home-nf-docs-v16',[]).filter(x=>x&&!hasTestMarker(x.client,x.status,x.notes)&&!demoSaleIds.has(String(x.saleId||'')));
-  const movements=safeReadArray('home-stock-log-v16',[]).filter(x=>x&&!hasTestMarker(x.product,x.origin,x.note)&&![...demoSaleIds].some(id=>String(x.origin||'').includes(id))&&![...demoPurchaseIds].some(id=>String(x.origin||'').includes(id)));
+  const movements=safeReadArray('home-stock-log-v16',[]).filter(x=>x&&!hasTestMarker(x.product,x.origin,x.note)&&![...demoSaleIds].some(id=>String(x.origin||'').includes(id)));
   const notifications=safeReadArray('home-notifications-v12',[]).filter(x=>x&&!hasTestMarker(x.title,x.text,x.message,x.desc));
   const cashLog=safeReadArray('home-cash-log-v23',[]).filter(x=>x&&!hasTestMarker(x.label,x.desc,x.operator,x.note)&&![...demoSaleIds].some(id=>String(x.saleId||x.origin||'').includes(id)));
   const supplierNames=new Set(suppliers.map(x=>String(x.name||'').trim().toLocaleLowerCase('pt-BR')));
   for(const supplier of masterSuppliers){const k=String(supplier.name||'').trim().toLocaleLowerCase('pt-BR');if(k&&!supplierNames.has(k)){suppliers.push(supplier);supplierNames.add(k)}}
-  safeWrite('home-clients-v12',clients);safeWrite('home-suppliers-v12',suppliers);safeWrite('home-finance-v12',finance);safeWrite('home-sales-v12',sales);safeWrite('home-purchases-v12',purchases);safeWrite('home-nf-docs-v16',invoices);safeWrite('home-stock-log-v16',movements);safeWrite('home-notifications-v12',notifications);safeWrite('home-cash-log-v23',cashLog);
-  return {clients:clients.length,suppliers:suppliers.length,finance:finance.length,sales:sales.length,purchases:purchases.length,invoices:invoices.length,movements:movements.length,notifications:notifications.length,cashLog:cashLog.length};
+  safeWrite('home-clients-v12',clients);safeWrite('home-suppliers-v12',suppliers);safeWrite('home-finance-v12',finance);safeWrite('home-sales-v12',sales);safeWrite('home-nf-docs-v16',invoices);safeWrite('home-stock-log-v16',movements);safeWrite('home-notifications-v12',notifications);safeWrite('home-cash-log-v23',cashLog);
+  return {clients:clients.length,suppliers:suppliers.length,finance:finance.length,sales:sales.length,invoices:invoices.length,movements:movements.length,notifications:notifications.length,cashLog:cashLog.length};
 }
 function migrateTo2130(){
   const existing=safeReadArray('home-products-v12',[]);
@@ -126,7 +123,7 @@ function migrateTo2131(){
 
 
 function migrateTo2132(){
-  const before={finance:safeReadArray('home-finance-v12',[]).length,sales:safeReadArray('home-sales-v12',[]).length,purchases:safeReadArray('home-purchases-v12',[]).length};
+  const before={finance:safeReadArray('home-finance-v12',[]).length,sales:safeReadArray('home-sales-v12',[]).length};
   const cleaned=cleanDemoAndTestData();
   safeWrite('homeerp-cleanup-report-v2132',{at:new Date().toISOString(),before,after:cleaned,note:'Limpeza de dados demo/teste/placeholders antes do uso real. Produtos da base mestra e cadastros reais são preservados.'});
 }
@@ -156,10 +153,8 @@ function migrateTo2133(){
 function migrateTo2134(){
   const finance=safeReadArray('home-finance-v12',[]);
   const sales=safeReadArray('home-sales-v12',[]);
-  const purchases=safeReadArray('home-purchases-v12',[]);
   const bills=safeReadArray('homeerp-bills-v211',[]);
   const saleIds=new Set(sales.map(x=>String(x?.id??'')));
-  const purchaseIds=new Set(purchases.map(x=>String(x?.id??'')));
   const billIds=new Set(bills.map(x=>String(x?.id??'')));
   const removed=[];
   const kept=[];
@@ -169,7 +164,6 @@ function migrateTo2134(){
     if([1,2,3,4].includes(Number(x.id)))return 'seed financeiro histórico';
     const o=String(x.origin||'');
     if((o.startsWith('sale:')||o.startsWith('cash-sale:'))&&!saleIds.has(o.replace(/^cash-sale:|^sale:/,'')))return 'venda de origem inexistente';
-    if(o.startsWith('purchase:')&&!purchaseIds.has(o.replace('purchase:','')))return 'compra de origem inexistente';
     if(o.startsWith('bill:')&&!billIds.has(o.replace('bill:','')))return 'boleto de origem inexistente';
     return '';
   };
@@ -206,7 +200,6 @@ function migrateTo2170(){
     const origin=String(f?.origin||'');
     if(f?.sourceType&&f?.sourceId)return f;
     if(origin.startsWith('cash-sale:')||origin.startsWith('sale:'))return{...f,sourceType:'sale',sourceId:origin.replace(/^cash-sale:|^sale:/,'')};
-    if(origin.startsWith('purchase:'))return{...f,sourceType:'purchase',sourceId:origin.replace('purchase:','')};
     if(origin.startsWith('bill:'))return{...f,sourceType:'bill',sourceId:origin.replace('bill:','')};
     if(origin==='ofx')return{...f,sourceType:'ofx',sourceId:String(f.id||'')};
     if(origin==='recurring')return{...f,sourceType:'recurring',sourceId:String(f.id||'')};
@@ -229,7 +222,7 @@ export function storageHealth(){
   return{keys,bytes,corrupt,version:localStorage.getItem(VERSION_KEY)||'legacy'};
 }
 export const STORAGE_KEYS={
-  products:'home-products-v12',clients:'home-clients-v12',suppliers:'home-suppliers-v12',finance:'home-finance-v12',sales:'home-sales-v12',purchases:'home-purchases-v12',movements:'home-stock-log-v16',invoices:'home-nf-docs-v16',cashLog:'home-cash-log-v23',cashSession:'home-cash-session-v23',held:'home-cash-held-v23',orders:'home-orders-v217'
+  products:'home-products-v12',clients:'home-clients-v12',suppliers:'home-suppliers-v12',finance:'home-finance-v12',sales:'home-sales-v12',movements:'home-stock-log-v16',invoices:'home-nf-docs-v16',cashLog:'home-cash-log-v23',cashSession:'home-cash-session-v23',held:'home-cash-held-v23',orders:'home-orders-v217'
 };
 export async function commitLocalTransaction(label,changes={}){
   if(cloudConfigured()){
