@@ -382,17 +382,16 @@ export default function Cashier({sales,setSales,products,setProducts,clients,set
 
   const closeCash=async ()=>{
     if(!session)return;
-    if(!can('cash.close'))return toast(`O perfil ${currentRole()} não pode fechar o caixa.`,'warning','Permissão');
-    if(closeValue==='')return toast('Informe o valor contado no caixa.','warning','Fechamento');
-    const actual=Number(closeValue);if(Number.isNaN(actual)||actual<0)return toast('Valor contado inválido.','warning','Fechamento');
+    if(!can('cash.close'))return toast('O perfil '+currentRole()+' não pode fechar o caixa.','warning','Permissão');
     createLocalSnapshot('before-close-cash');
-    const now=new Date().toISOString(),diff=actual-expected;
-    const report={id:uid('closing'),sessionId:session.id,sessionCode:session.sessionCode,terminal:session.terminal,operator:session.openedBy||operator,openedAt:session.openedAt,closedAt:now,opening:Number(session.opening)||0,sessionRevenue,cashSales,cashIn,cashOut,expected,actual,difference:diff,paymentSummary,acquirerSummary,cardInstallmentSummary,sellerSummary,paymentFees:sessionFees,netExpected:sessionNet,transactions:sessionLogs.length};
-    const nextLog=[{id:newId(),sessionId:session.id,sessionCode:session.sessionCode,kind:'close',amount:actual,expected,difference:diff,at:now,operator:session.openedBy||operator,sessionRevenue,report},...cashLog];
+    const now=new Date().toISOString();
+    const closingTotal=Number(sessionRevenue)||0;
+    const report={id:uid('closing'),sessionId:session.id,sessionCode:session.sessionCode,terminal:session.terminal,operator:session.openedBy||operator,openedAt:session.openedAt,closedAt:now,totalSales:closingTotal,sessionRevenue:closingTotal,salesCount:sessionSales.length,cashSales,paymentSummary,acquirerSummary,cardInstallmentSummary,sellerSummary,paymentFees:sessionFees,netExpected:sessionNet,transactions:sessionSales.length};
+    const nextLog=[{id:newId(),sessionId:session.id,sessionCode:session.sessionCode,kind:'close',amount:closingTotal,totalSales:closingTotal,salesCount:sessionSales.length,at:now,operator:session.openedBy||operator,sessionRevenue:closingTotal,report},...cashLog];
     if(!await writeCashState('close-cash',{session:null,log:nextLog,held}))return;
-    addAudit('Caixa fechado','Caixa',`${session.openedBy||operator} · esperado ${money(expected)} · contado ${money(actual)} · diferença ${money(diff)}`);
+    addAudit('Caixa fechado','Caixa',(session.openedBy||operator)+' · '+sessionSales.length+' venda(s) · total '+money(closingTotal));
     setCloseReport(report);setCloseModal(false);setCloseValue('');setBlindCloseRevealed(false);resetSale();setOpenModal(true);
-    toast(`Caixa fechado. Diferença: ${money(diff)}.`,'info','Fechamento');
+    toast('Caixa fechado em '+money(closingTotal)+'.','success','Fechamento');
   };
 
   const reopenLastCash=async ()=>{const lastClose=cashLog.find(x=>x.kind==='close'&&x.report);if(!lastClose)return toast('Nenhum fechamento disponível para reabrir.','warning','Caixa');if(!checkManagerPin(reopenPin))return toast('PIN gerencial inválido.','warning','Autorização');if(!reopenReason.trim())return toast('Informe a justificativa da reabertura.','warning','Caixa');const r=lastClose.report,now=new Date().toISOString();const restored={id:r.sessionId||newId(),sessionCode:r.sessionCode||`REAB-${localDateCode()}`,opening:Number(r.opening)||0,openedAt:r.openedAt||now,status:'open',terminal:r.terminal||terminal,openedBy:r.operator||operator,reopenedAt:now,reopenReason:reopenReason.trim()};const nextLog=[{id:newId(),sessionId:restored.id,sessionCode:restored.sessionCode,kind:'reopen',amount:0,at:now,operator,reason:reopenReason.trim()},...cashLog];if(!await writeCashState('reopen-cash',{session:restored,log:nextLog,held}))return;addAudit('Caixa reaberto','Caixa',`${restored.sessionCode} · ${reopenReason.trim()}`);setReopenOpen(false);setReopenPin('');setReopenReason('');setOpenModal(false);toast('Caixa reaberto com auditoria.','success','Caixa')};
@@ -546,7 +545,21 @@ export default function Cashier({sales,setSales,products,setProducts,clients,set
 
     {cashMove&&<Modal title={cashMove==='in'?'Suprimento de caixa':'Sangria de caixa'} subtitle="A movimentação será registrada no fechamento e na auditoria." onClose={()=>setCashMove(null)}><div className="form-grid"><label className="form-field"><span>Valor</span><input autoFocus type="number" min="0" value={moveValue} onChange={e=>setMoveValue(e.target.value)}/></label><label className="form-field"><span>{cashMove==='in'?'Origem':'Destino'}</span><select value={moveParty} onChange={e=>setMoveParty(e.target.value)}><option value="">Selecione</option>{(cashMove==='in'?['Troco inicial','Reforço de caixa','Devolução de sangria','Outro']:['Cofre','Banco','Retirada administrativa','Despesa','Outro']).map(x=><option key={x}>{x}</option>)}</select></label><label className="form-field wide"><span>Motivo / observação</span><input value={moveNote} onChange={e=>setMoveNote(e.target.value)} placeholder="Informe o motivo da movimentação"/></label>{cashMove==='out'&&Number(moveValue)>=Number(erpStorage.getItem('home-high-withdrawal-limit')||1000)&&<label className="form-field wide"><span>PIN gerencial</span><input type="password" inputMode="numeric" value={managerPinValue} onChange={e=>setManagerPinValue(e.target.value.replace(/\D/g,''))}/></label>}</div><div className="modal-actions"><button className="primary" onClick={saveMove}>Confirmar movimentação</button></div></Modal>}
 
-    {closeModal&&<Modal size="large" title="Fechamento de caixa" subtitle="Fechamento cego: conte primeiro, confira depois." onClose={()=>{setCloseModal(false);setBlindCloseRevealed(false)}}><div className="pdv-close-grid"><div className="pdv-close-summary">{!blindCloseRevealed?<div className="blind-close-note"><ShieldCheck size={22}/><b>Valores esperados ocultos</b><small>Informe o dinheiro contado para revelar a conferência.</small></div>:<><span>Fundo inicial <b>{money(session?.opening||0)}</b></span><span>Vendas da sessão <b>{money(sessionRevenue)}</b></span><span>Vendas em dinheiro <b>{money(cashSales)}</b></span><span>Suprimentos <b>{money(cashIn)}</b></span><span>Sangrias <b>- {money(cashOut)}</b></span><strong>Dinheiro esperado <em>{money(expected)}</em></strong><h4>Formas de pagamento</h4>{paymentSummary.map(([type,value])=><span key={type}>{type}<b>{money(value)}</b></span>)}</>}</div><div><label className="form-field"><span>Valor contado no caixa</span><input autoFocus type="number" min="0" value={closeValue} onChange={e=>setCloseValue(e.target.value)}/></label>{!blindCloseRevealed?<button className="pdv-modal-primary" onClick={()=>{if(closeValue==='')return toast('Informe o valor contado.','warning','Fechamento');setBlindCloseRevealed(true)}}><Eye size={17}/>CONFERIR VALORES</button>:<>{closeValue!==''&&<div className={`pdv-close-difference ${Number(closeValue)-expected===0?'ok':Number(closeValue)-expected>0?'positive':'negative'}`}><span>Diferença</span><b>{money(Number(closeValue)-expected)}</b></div>}<button className="pdv-modal-primary" onClick={closeCash}><LockKeyhole size={17}/>CONFIRMAR FECHAMENTO</button></>}</div></div></Modal>}
+    {closeModal&&<Modal size="large" title="Fechamento de caixa" subtitle="O fechamento é calculado automaticamente pelo total das vendas desta sessão." onClose={()=>setCloseModal(false)}>
+      <div className="pdv-close-grid">
+        <div className="pdv-close-summary">
+          <span>Vendas realizadas <b>{sessionSales.length}</b></span>
+          <span>Vendas em dinheiro <b>{money(cashSales)}</b></span>
+          {paymentSummary.length>0&&<><h4>Formas de pagamento</h4>{paymentSummary.map(([type,value])=><span key={type}>{type}<b>{money(value)}</b></span>)}</>}
+          <strong>Total das vendas <em>{money(sessionRevenue)}</em></strong>
+        </div>
+        <div className="pdv-close-auto">
+          <div className="blind-close-note"><CheckCircle2 size={22}/><b>Fechamento automático</b><small>{sessionSales.length?("O sistema somou automaticamente "+sessionSales.length+" venda(s) desta sessão."):"Nenhuma venda foi registrada nesta sessão. O fechamento será R$ 0,00."}</small></div>
+          <div className="pdv-close-total"><span>VALOR DO FECHAMENTO</span><b>{money(sessionRevenue)}</b></div>
+          <button className="pdv-modal-primary" onClick={closeCash}><LockKeyhole size={17}/>FECHAR CAIXA</button>
+        </div>
+      </div>
+    </Modal>}
 
     {checkoutOpen&&<Modal size="large" title="Finalizar venda" subtitle={`${seller||'Sem vendedora'} · ${client||'Consumidor final'} · ${money(total)}`} onClose={()=>!finalizing&&setCheckoutOpen(false)} preventBackdropClose={finalizing}>
       <div className="pdv-checkout pdv-checkout-v2171">
