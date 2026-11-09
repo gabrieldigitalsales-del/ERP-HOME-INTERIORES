@@ -69,8 +69,6 @@ export default function Cashier({sales,setSales,products,setProducts,clients,set
   const[openValue,setOpenValue]=useState('');
   const[showOptionalFloat,setShowOptionalFloat]=useState(false);
   const[terminal,setTerminal]=useState(()=>erpStorage.getItem('home-cash-terminal')||'Caixa 01');
-  const[closeValue,setCloseValue]=useState('');
-  const[blindCloseRevealed,setBlindCloseRevealed]=useState(false);
   const[moveValue,setMoveValue]=useState('');
   const[moveNote,setMoveNote]=useState('');
   const[clientOpen,setClientOpen]=useState(false);
@@ -390,7 +388,7 @@ export default function Cashier({sales,setSales,products,setProducts,clients,set
     const nextLog=[{id:newId(),sessionId:session.id,sessionCode:session.sessionCode,kind:'close',amount:closingTotal,totalSales:closingTotal,salesCount:sessionSales.length,at:now,operator:session.openedBy||operator,sessionRevenue:closingTotal,report},...cashLog];
     if(!await writeCashState('close-cash',{session:null,log:nextLog,held}))return;
     addAudit('Caixa fechado','Caixa',(session.openedBy||operator)+' · '+sessionSales.length+' venda(s) · total '+money(closingTotal));
-    setCloseReport(report);setCloseModal(false);setCloseValue('');setBlindCloseRevealed(false);resetSale();setOpenModal(true);
+    setCloseReport(report);setCloseModal(false);resetSale();setOpenModal(true);
     toast('Caixa fechado em '+money(closingTotal)+'.','success','Fechamento');
   };
 
@@ -461,7 +459,7 @@ export default function Cashier({sales,setSales,products,setProducts,clients,set
   const clearSale=()=>{resetSale();setConfirmClear(false);toast('Venda atual limpa.','info','Caixa')};
 
   return <section className="page cashier-page cashier-v26">
-    <PageHeader title="Caixa / PDV" subtitle="PDV simplificado para móveis e estofados · registros ainda armazenados neste navegador." action={session?<div className="action-row"><button className="secondary" onClick={()=>setCashMove('in')}><ArrowDownToLine size={16}/>Suprimento</button><button className="secondary" onClick={()=>setCashMove('out')}><ArrowUpFromLine size={16}/>Sangria</button><button className="primary" onClick={()=>setCloseModal(true)}><LockKeyhole size={16}/>Fechar caixa</button></div>:<div className="action-row"><button className="secondary" onClick={()=>setReopenOpen(true)}><RefreshCcw size={16}/>Reabrir último</button><button className="primary" onClick={()=>setOpenModal(true)}><UnlockKeyhole size={16}/>Abrir caixa</button></div>}/>
+    <PageHeader title="Caixa / PDV" subtitle="PDV integrado ao estoque, vendas e financeiro da Home Interiores." action={session?<div className="action-row"><button className="secondary" onClick={()=>setCashMove('in')}><ArrowDownToLine size={16}/>Suprimento</button><button className="secondary" onClick={()=>setCashMove('out')}><ArrowUpFromLine size={16}/>Sangria</button><button className="primary" onClick={()=>setCloseModal(true)}><LockKeyhole size={16}/>Fechar caixa</button></div>:<div className="action-row"><button className="secondary" onClick={()=>setReopenOpen(true)}><RefreshCcw size={16}/>Reabrir último</button><button className="primary" onClick={()=>setOpenModal(true)}><UnlockKeyhole size={16}/>Abrir caixa</button></div>}/>
 
     <div className="pdv-topline">
       <div className={`pdv-session-card ${session?'is-open':'is-closed'}`}><span className="pdv-led"/><div><small>{session?'CAIXA ABERTO':'CAIXA FECHADO'}</small><b>{session?.terminal||'Caixa 01'}</b>{session?.sessionCode&&<em>{session.sessionCode}</em>}</div></div>
