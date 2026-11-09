@@ -4,7 +4,7 @@ import {erpCloudStorage,cloudReady,commitCloudDocuments,queueCloudWrite,flushClo
 const LEGACY_PREFIX='home-';
 const ERP_PREFIX='homeerp-';
 const VERSION_KEY='home-app-schema-version';
-export const APP_SCHEMA_VERSION='2.19.0';
+export const APP_SCHEMA_VERSION='2.19.1';
 const isHomeKey=k=>Boolean(k&&(k.startsWith(LEGACY_PREFIX)||k.startsWith(ERP_PREFIX)));
 const businessStorage=()=>cloudConfigured()&&cloudReady()?erpCloudStorage:localStorage;
 export const erpStorage={
