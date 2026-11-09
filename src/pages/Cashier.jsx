@@ -91,12 +91,7 @@ export default function Cashier({sales,setSales,products,setProducts,clients,set
   const[reopenReason,setReopenReason]=useState('');
   const searchRef=useRef(null);
 
-  const pdvProducts=useMemo(()=>products.filter(p=>{
-    if(p.active===false)return false;
-    const showroom=p.inventoryClass==='showroom'||p.stockType==='Mostruário';
-    const manualStoreItem=!p.sourceTable&&String(p.id||'').startsWith('prd-');
-    return showroom||manualStoreItem;
-  }),[products]);
+  const pdvProducts=useMemo(()=>products.filter(p=>p.active!==false&&(p.inventoryClass==='showroom'||p.stockType==='Mostruário')),[products]);
   const categories=useMemo(()=>['Todos',...Array.from(new Set(pdvProducts.map(p=>p.category).filter(Boolean))).sort()], [pdvProducts]);
   const filtered=useMemo(()=>{
     const terms=normalizePdvSearch(q).split(' ').filter(Boolean);
