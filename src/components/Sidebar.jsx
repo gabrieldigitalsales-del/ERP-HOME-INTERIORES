@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,Package,Boxes,ArrowLeftRight,ShoppingCart,Store,Users,Truck,
-  ShoppingBasket,WalletCards,ChartSpline,Settings,ChevronRight,ShieldCheck,ClipboardCheck
+  WalletCards,ChartSpline,Settings,ChevronRight,ShieldCheck,ClipboardCheck
 } from 'lucide-react';
 import logo from '../assets/home-logo-bw.png';import{canViewPage}from'../utils/permissions';
 
@@ -10,9 +10,9 @@ export const navItems=[
   ['cashier','Caixa',Store,'Operação'],
   ['sales','Histórico de vendas',ShoppingCart,'Operação'],
   ['orders','Pedidos',ClipboardCheck,'Operação'],
-  ['products','Produtos',Package,'Cadastros'],
-  ['stock','Estoque',Boxes,'Estoque & Compras'],
-  ['purchases','Compras',ShoppingBasket,'Estoque & Compras'],
+  ['salespeople','Vendedoras',Users,'Cadastros'],
+  ['stock','Produtos e Estoque',Boxes,'Estoque'],
+  ['movements','Movimentações',ArrowLeftRight,'Estoque'],
   ['clients','Clientes',Users,'Cadastros'],
   ['suppliers','Fornecedores',Truck,'Cadastros'],
   ['finance','Financeiro',WalletCards,'Gestão'],
@@ -30,7 +30,7 @@ export default function Sidebar({page,setPage}){
     <nav>{(()=>{let last='';return navItems.filter(([id])=>canViewPage(id)).map(([id,label,Icon,group])=>{const show=group!==last;last=group;return <React.Fragment key={id}>{show&&<span className="nav-section-label">{group}</span>}<button onClick={()=>setPage(id)} className={`nav-item ${page===id?'active':''}`}><Icon size={18}/><span>{label}</span><ChevronRight className="nav-chevron" size={14}/></button></React.Fragment>})})()}</nav>
     <div className="sidebar-footer">
       <div className="company-pill">
-        <span className="status-dot"/><div><b>Home Interiores</b><small>Plataforma premium</small></div>
+        <span className="status-dot"/><div><b>Home Interiores</b></div>
       </div>
     </div>
   </aside>
