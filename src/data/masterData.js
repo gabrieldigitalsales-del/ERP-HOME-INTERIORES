@@ -69,7 +69,7 @@ export function toAppProduct(r,index=0){
     sku_ref:r.sku_ref??null,cor_acabamento:r.cor_acabamento??null,tamanho_medida:r.tamanho_medida??null,
     variante:r.variante??null,preco_final:money2(r.preco_final),observacoes:r.observacoes??null,
     origem_tabela:r.origem_tabela??null,
-    stock:Math.max(1,Number(r.quantidade)||1),reserved:0,minStock:0,cost:0,unit:'UN',active:true,
+    supplierStock:Math.max(0,Number(r.quantidade)||0),showroomStock:0,stock:0,reserved:0,minStock:0,cost:0,unit:'UN',active:true,inventoryClass:'supplier_catalog',stockType:'Catálogo',
     ncm:'',ncmDescription:'',ncmVerified:false
   });
 }
