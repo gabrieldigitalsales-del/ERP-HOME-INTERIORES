@@ -8,24 +8,24 @@ import{money}from'../utils/erpEngine';
 import{addAudit}from'../utils/audit';
 import{can,currentRole}from'../utils/permissions';
 
-const blank=()=>({name:'',sku:'',category:'',supplier:'',price:0,cost:0,stock:1,reserved:0,minStock:0,location:'Showroom',active:true,stockType:'Mostruário',inventoryClass:'showroom',source:'showroom'});
+const blank=()=>({name:'',sku:'',category:'',supplier:'',price:0,cost:0,stock:1,showroomStock:1,reserved:0,minStock:0,location:'Showroom',active:true,stockType:'Mostruário',inventoryClass:'showroom',source:'showroom'});
 const isShowroom=p=>p?.inventoryClass==='showroom'||p?.stockType==='Mostruário';
-const isSupplierCatalog=p=>Boolean(p?.sourceTable)&&!isShowroom(p);
+const isSupplierCatalog=p=>(p?.inventoryClass==='supplier_catalog'||Boolean(p?.sourceTable))&&!isShowroom(p);
 
 export default function Showroom({products,setProducts}){
  const[q,setQ]=useState(''),[catalogQ,setCatalogQ]=useState(''),[newOpen,setNewOpen]=useState(false);
  const[draft,setDraft]=useState(blank()),[pick,setPick]=useState(null),[pickQty,setPickQty]=useState(1),[edit,setEdit]=useState(null),[remove,setRemove]=useState(null);
  const showroom=useMemo(()=>products.filter(p=>p.active!==false&&isShowroom(p)).filter(p=>(String(p.name||'')+' '+String(p.sku||'')+' '+String(p.supplier||'')+' '+String(p.category||'')).toLowerCase().includes(q.toLowerCase())),[products,q]);
  const catalog=useMemo(()=>products.filter(p=>p.active!==false&&isSupplierCatalog(p)).filter(p=>(String(p.name||'')+' '+String(p.sku||'')+' '+String(p.supplier||'')+' '+String(p.category||'')).toLowerCase().includes(catalogQ.toLowerCase())).slice(0,80),[products,catalogQ]);
- const totalUnits=showroom.reduce((s,p)=>s+(Number(p.stock)||0),0);
- const totalValue=showroom.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.price)||0),0);
+ const totalUnits=showroom.reduce((s,p)=>s+(Number(p.showroomStock??p.stock)||0),0);
+ const totalValue=showroom.reduce((s,p)=>s+(Number(p.showroomStock??p.stock)||0)*(Number(p.price)||0),0);
 
  const addCustom=()=>{
   if(!can('products.write'))return toast('O perfil '+currentRole()+' não pode cadastrar produtos.','warning','Showroom');
   if(!draft.name.trim())return toast('Informe o nome do produto.','warning','Showroom');
   if(!draft.sku.trim())return toast('Informe o SKU ou referência.','warning','Showroom');
   if(!(Number(draft.price)>0))return toast('Informe o preço de venda.','warning','Showroom');
-  const item={...draft,id:uid('prd'),stock:Math.max(0,Number(draft.stock)||0),price:Number(draft.price)||0,cost:Number(draft.cost)||0,reserved:0,active:true,stockType:'Mostruário',inventoryClass:'showroom',source:'showroom',createdAt:new Date().toISOString()};
+  const physical=Math.max(0,Number(draft.stock)||0);const item={...draft,id:uid('prd'),stock:physical,showroomStock:physical,price:Number(draft.price)||0,cost:Number(draft.cost)||0,reserved:0,active:true,stockType:'Mostruário',inventoryClass:'showroom',source:'showroom',createdAt:new Date().toISOString()};
   setProducts(rows=>[item,...rows]);
   addAudit('Produto adicionado ao showroom','Showroom',item.name+' · '+item.sku);
   setDraft(blank());setNewOpen(false);toast('Produto cadastrado no showroom e liberado no PDV.','success','Showroom');
@@ -35,22 +35,22 @@ export default function Showroom({products,setProducts}){
   if(!pick)return;
   if(!can('products.write'))return toast('O perfil '+currentRole()+' não pode alterar estoque.','warning','Showroom');
   const qty=Math.max(0,Number(pickQty)||0);
-  setProducts(rows=>rows.map(p=>String(p.id)===String(pick.id)?{...p,stock:qty,reserved:0,stockType:'Mostruário',inventoryClass:'showroom',source:'showroom-from-supplier',location:p.location||'Showroom',stockConfirmed:true,inventoryPending:false,showroomAddedAt:new Date().toISOString()}:p));
+  setProducts(rows=>rows.map(p=>String(p.id)===String(pick.id)?{...p,supplierStock:Number(p.supplierStock??p.stock)||0,stock:qty,showroomStock:qty,reserved:0,stockType:'Mostruário',inventoryClass:'showroom',source:'showroom-from-supplier',location:p.location||'Showroom',stockConfirmed:true,inventoryPending:false,showroomAddedAt:new Date().toISOString()}:p));
   addAudit('Catálogo enviado ao showroom','Showroom',pick.name+' · '+qty+' un.');
   setPick(null);setPickQty(1);toast('Item incluído no showroom e agora aparece no PDV.','success','Showroom');
  };
 
  const saveEdit=()=>{
   if(!edit)return;
-  const qty=Math.max(0,Number(edit.stock)||0);
-  setProducts(rows=>rows.map(p=>String(p.id)===String(edit.id)?{...p,...edit,stock:qty,price:Number(edit.price)||0,cost:Number(edit.cost)||0,stockType:'Mostruário',inventoryClass:'showroom',location:edit.location||'Showroom',updatedAt:new Date().toISOString()}:p));
+  const qty=Math.max(0,Number(edit.showroomStock??edit.stock)||0);
+  setProducts(rows=>rows.map(p=>String(p.id)===String(edit.id)?{...p,...edit,stock:qty,showroomStock:qty,price:Number(edit.price)||0,cost:Number(edit.cost)||0,stockType:'Mostruário',inventoryClass:'showroom',location:edit.location||'Showroom',updatedAt:new Date().toISOString()}:p));
   addAudit('Item do showroom alterado','Showroom',edit.name);
   setEdit(null);toast('Showroom atualizado. O PDV já usa esses dados.','success','Showroom');
  };
 
  const removeFromShowroom=()=>{
   if(!remove)return;
-  setProducts(rows=>rows.map(p=>String(p.id)===String(remove.id)?{...p,stock:0,reserved:0,stockType:p.sourceTable?'Catálogo':'Estoque',inventoryClass:p.sourceTable?'supplier_catalog':'standard',showroomRemovedAt:new Date().toISOString()}:p));
+  setProducts(rows=>rows.map(p=>String(p.id)===String(remove.id)?{...p,stock:0,showroomStock:0,reserved:0,stockType:(p.sourceTable||p.supplierStock!=null)?'Catálogo':'Estoque',inventoryClass:(p.sourceTable||p.supplierStock!=null)?'supplier_catalog':'standard',showroomRemovedAt:new Date().toISOString()}:p));
   addAudit('Produto retirado do showroom','Showroom',remove.name);
   setRemove(null);toast('Produto retirado do showroom e removido do PDV.','success','Showroom');
  };
@@ -73,7 +73,7 @@ export default function Showroom({products,setProducts}){
       <div><b>{p.name}</b><small>{p.sourceTable?'Origem: tabela do fornecedor':'Cadastro da loja'}</small></div>
       <span>{p.category||'—'}</span><span><b className="mono">{p.sku||'—'}</b></span><span>{p.location||'Showroom'}</span>
       <span><b>{money(p.price)}</b></span><span>{p.supplier||'—'}</span>
-      <span><b>{Math.max(0,(Number(p.stock)||0)-(Number(p.reserved)||0))} un.</b><small>Físico {Number(p.stock)||0}</small></span>
+      <span><b>{Math.max(0,(Number(p.showroomStock??p.stock)||0)-(Number(p.reserved)||0))} un.</b><small>Físico {Number(p.showroomStock??p.stock)||0}</small></span>
       <div className="row-actions"><button title="Editar" onClick={()=>setEdit({...p})}><Pencil size={15}/></button><button title="Retirar do showroom" onClick={()=>setRemove(p)}><Trash2 size={15}/></button></div>
     </div>)}
     {!showroom.length&&<p className="empty">Nenhum produto cadastrado no showroom ainda.</p>}
@@ -112,7 +112,7 @@ export default function Showroom({products,setProducts}){
       <label className="form-field"><span>SKU</span><input value={edit.sku||''} onChange={e=>setEdit({...edit,sku:e.target.value})}/></label>
       <label className="form-field"><span>Fornecedor</span><input value={edit.supplier||''} onChange={e=>setEdit({...edit,supplier:e.target.value})}/></label>
       <label className="form-field"><span>Preço de venda</span><input type="number" min="0" step="0.01" value={edit.price||''} onChange={e=>setEdit({...edit,price:Number(e.target.value)})}/></label>
-      <label className="form-field"><span>Quantidade física</span><input type="number" min="0" value={edit.stock||0} onChange={e=>setEdit({...edit,stock:Number(e.target.value)})}/></label>
+      <label className="form-field"><span>Quantidade física</span><input type="number" min="0" value={edit.showroomStock??edit.stock??0} onChange={e=>setEdit({...edit,stock:Number(e.target.value),showroomStock:Number(e.target.value)})}/></label>
       <label className="form-field"><span>Localização</span><input value={edit.location||'Showroom'} onChange={e=>setEdit({...edit,location:e.target.value})}/></label>
     </div>
     <div className="modal-actions"><button className="secondary" onClick={()=>setEdit(null)}>Cancelar</button><button className="primary" onClick={saveEdit}>Salvar alterações</button></div>
