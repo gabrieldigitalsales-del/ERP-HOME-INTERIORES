@@ -78,7 +78,8 @@ export default function Products({ products, setProducts, setPage, sales = [], e
     () =>
       products.filter((p) => {
         const hit = (p.name + p.sku + p.category + p.supplier).toLowerCase().includes(q.toLowerCase());
-        const state = filter === 'all' ? true : filter === 'archived' ? p.active === false : p.active !== false;
+        const isShowroom=Boolean(p.showroom||p.inventoryClass==='showroom'||p.stockType==='Mostruário');
+        const state = filter === 'all' ? true : filter === 'archived' ? p.active === false : filter === 'showroom' ? p.active !== false&&isShowroom : filter === 'general' ? p.active !== false&&!isShowroom : p.active !== false;
         return hit && state;
       }),
     [products, q, filter]
@@ -190,7 +191,9 @@ export default function Products({ products, setProducts, setPage, sales = [], e
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar produto, SKU, categoria ou fornecedor..." />
         </label>
         <select className="period-input" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="active">Ativos</option>
+          <option value="active">Todos ativos</option>
+          <option value="showroom">Showroom / PDV</option>
+          <option value="general">Fora do PDV</option>
           <option value="archived">Arquivados</option>
           <option value="all">Todos</option>
         </select>
