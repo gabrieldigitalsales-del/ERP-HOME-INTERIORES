@@ -1,14 +1,15 @@
-# HOME ERP v2.18.3
+# Changelog atual — HOME ERP 2.19.0
 
-## PWA desktop reforçada
-- instalação como aplicativo pelo Chrome/Edge em ambiente HTTPS;
-- janela standalone sem barra de endereço;
-- ícone HOME ERP no Windows;
-- botão de instalação some quando o ERP já está rodando instalado;
-- service worker com cache do app shell e fallback offline;
-- atualização de versão detectada dentro do próprio aplicativo;
-- botão “Nova versão disponível > Atualizar”;
-- atalhos PWA para Caixa e Produtos;
-- manifest em pt-BR com launch handler;
-- cache versionado em `home-erp-v2.18.3`;
-- NCM embutido da v2.18.2 preservado.
+- Sincronização funcional com o ERP Lux Decor sem copiar identidade ou dados.
+- Caixa/PDV atualizado com pesquisa tolerante, preço pendente e pagamento unificado.
+- Cadastro de vendedoras ativas com PIN, comissão, meta e limite de desconto.
+- Produtos e Estoque unificados no fluxo principal.
+- Estoque, inventário e movimentações atualizados.
+- Histórico de vendas atualizado, mantendo venda exclusivamente pelo Caixa.
+- Pedidos, Compras, Pós-venda, Financeiro e Relatórios sincronizados funcionalmente.
+- Notificações operacionais revisadas.
+- Remoção de NCM, classificação fiscal, NF-e/NFC-e e telas/configurações fiscais.
+- Histórico fiscal local preservado sem exposição na interface.
+- Loading Home Interiores antes do login.
+- Build agora executa release-check antes do Vite.
+- Versão sincronizada em schema, PWA, backup e título.
