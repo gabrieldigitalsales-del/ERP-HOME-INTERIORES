@@ -1,7 +1,7 @@
 import{isoToday}from'./erpEngine';
 export function deriveOperationalNotifications({products=[],finance=[],sales=[]}={}){
  const today=isoToday();
- const low=(Array.isArray(products)?products:[]).filter(p=>p.active!==false&&Number(p.stock||0)<=Number(p.minStock||0));
+ const low=(Array.isArray(products)?products:[]).filter(p=>p.active!==false&&p.inventoryClass!=='supplier_catalog'&&Number(p.showroomStock??p.stock??0)<=Number(p.minStock||0));
  const overdue=(Array.isArray(finance)?finance:[]).filter(x=>!['paid','cancelled'].includes(x.status)&&x.due&&x.due<today);
  const now=Date.now(),tomorrow=now+86400000;
  const expiring=(Array.isArray(sales)?sales:[]).filter(s=>s.status==='Orçamento'&&s.reservationActive&&s.reservationExpiresAt&&new Date(s.reservationExpiresAt).getTime()>now&&new Date(s.reservationExpiresAt).getTime()<=tomorrow);
