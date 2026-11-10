@@ -11,11 +11,11 @@ export function currentRole(){return getLocalSession()?.role||localStorage.getIt
 export function can(action,role=currentRole()){const list=PERMISSIONS[role]||[];return list.includes('*')||list.includes(action)}
 export function requirePermission(action){return{ok:can(action),role:currentRole(),action}}
 export const PAGE_ACCESS={
-  Administrador:['dashboard','products','stock','movements','sales','orders','cashier','clients','suppliers','finance','operations','reports','settings','salespeople'],
-  Gerente:['dashboard','products','stock','movements','sales','orders','cashier','clients','suppliers','finance','operations','reports','settings','salespeople'],
-  Vendedor:['dashboard','products','stock','sales','orders','cashier','clients','operations'],
-  Estoque:['dashboard','products','stock','movements','orders','purchases','suppliers'],
-  Financeiro:['dashboard','finance','reports','clients','suppliers'],
+  Administrador:['dashboard','products','stock','movements','sales','orders','cashier','registries','clients','suppliers','finance','operations','reports','settings','salespeople'],
+  Gerente:['dashboard','products','stock','movements','sales','orders','cashier','registries','clients','suppliers','finance','operations','reports','settings','salespeople'],
+  Vendedor:['dashboard','products','stock','sales','orders','cashier','registries','clients','operations'],
+  Estoque:['dashboard','products','stock','movements','orders','purchases','registries','suppliers'],
+  Financeiro:['dashboard','finance','reports','registries','clients','suppliers'],
   Fiscal:['dashboard','reports']
 };
 export function canViewPage(page,role=currentRole()){return(PAGE_ACCESS[role]||[]).includes(page)}
